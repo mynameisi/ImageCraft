@@ -6,6 +6,7 @@ import { Filters } from "@/components/image-editor/filters";
 import { UploadZone } from "@/components/image-editor/upload-zone";
 import { useToast } from "@/hooks/use-toast";
 import type { FilterState } from "@/lib/image-processing";
+import { resizeImage } from "@/lib/image-processing";
 
 export default function Editor() {
   const [image, setImage] = useState<string | null>(null);
@@ -43,8 +44,10 @@ export default function Editor() {
         });
       };
 
+      // Read and resize the image
       const dataUrl = await readFileAsDataURL(file);
-      setImage(dataUrl);
+      const resizedDataUrl = await resizeImage(dataUrl);
+      setImage(resizedDataUrl);
     } catch (err) {
       toast({
         title: "Error",
