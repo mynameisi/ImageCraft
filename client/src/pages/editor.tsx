@@ -29,12 +29,31 @@ export default function Editor() {
     }
   });
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (file: File) => {
+    try {
+      setLoading(true);
+
+      // Create a promise-based FileReader
+      const readFileAsDataURL = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const dataUrl = await readFileAsDataURL(file);
+      setImage(dataUrl);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to load image",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFilterChange = (category: keyof FilterState, filter: string, value: number) => {
@@ -49,12 +68,15 @@ export default function Editor() {
 
   const handleDownload = async () => {
     if (!image) return;
-    
+
     try {
       setLoading(true);
       const canvas = document.querySelector('#preview-canvas') as HTMLCanvasElement;
+      if (!canvas) {
+        throw new Error('Canvas not found');
+      }
+
       const dataUrl = canvas.toDataURL('image/png');
-      
       const link = document.createElement('a');
       link.download = 'edited-image.png';
       link.href = dataUrl;
@@ -86,7 +108,7 @@ export default function Editor() {
           <Card className="p-6">
             <div className="grid gap-6 md:grid-cols-[1fr_300px]">
               <Preview image={image} filters={filters} />
-              
+
               <div className="space-y-4">
                 <Tabs defaultValue="artistic">
                   <TabsList className="w-full">

@@ -19,7 +19,11 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg']
     },
-    maxFiles: 1
+    maxFiles: 1,
+    multiple: false,
+    noClick: false,
+    noKeyboard: false,
+    preventDropOnDocument: true
   });
 
   return (
