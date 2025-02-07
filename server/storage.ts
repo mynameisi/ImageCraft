@@ -1,39 +1,44 @@
-import { users, type User, type InsertUser } from "@shared/schema";
-
-// modify the interface with any CRUD methods
-// you might need
+import { images, filters, type Image, type InsertImage, type Filter, type InsertFilter } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getImage(id: number): Promise<Image | undefined>;
+  getAllImages(): Promise<Image[]>;
+  createImage(image: InsertImage): Promise<Image>;
+  getFilters(imageId: number): Promise<Filter[]>;
+  createFilter(filter: InsertFilter): Promise<Filter>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  currentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.currentId = 1;
+export class DatabaseStorage implements IStorage {
+  async getImage(id: number): Promise<Image | undefined> {
+    const [image] = await db.select().from(images).where(eq(images.id, id));
+    return image;
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getAllImages(): Promise<Image[]> {
+    return await db.select().from(images);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createImage(insertImage: InsertImage): Promise<Image> {
+    const [image] = await db
+      .insert(images)
+      .values(insertImage)
+      .returning();
+    return image;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getFilters(imageId: number): Promise<Filter[]> {
+    return await db.select().from(filters).where(eq(filters.imageId, imageId));
+  }
+
+  async createFilter(insertFilter: InsertFilter): Promise<Filter> {
+    const [filter] = await db
+      .insert(filters)
+      .values(insertFilter)
+      .returning();
+    return filter;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
